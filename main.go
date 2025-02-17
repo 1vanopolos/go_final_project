@@ -50,25 +50,7 @@ func main() {
 
 	if install {
 		// Создаем таблицу и индексы
-		sqlStmt := `
-		 CREATE TABLE scheduler (
-			 id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-			 date TEXT NOT NULL,
-			 title TEXT NOT NULL,
-			 comment TEXT,
-			 repeat VARCHAR(128)
-		 `
-		_, err = db.Exec(sqlStmt)
-		if err != nil {
-			log.Printf("%q: %s\n", err, sqlStmt)
-			return
-		}
-
-		// Создаем индекс, если это необходимо
-		_, err = db.Exec("CREATE INDEX idx_date ON scheduler (date)")
-		if err != nil {
-			log.Fatal(err)
-		}
+		database.CreateDB(db)
 	} else {
 		fmt.Println("База данных уже существует")
 	}
