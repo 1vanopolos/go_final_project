@@ -8,58 +8,65 @@ import (
 	"os"
 	"path/filepath"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
+
+	"github.com/1vanopolos/go_final_project/database"
+	"github.com/1vanopolos/go_final_project/handlers"
+	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 )
 
-const (
-	defaultPort = "7540"
-	webDir      = "./web"
-)
 
 func main() {
 	// Определяем порт, который будет слушать сервер
-	port := os.Getenv("TODO_PORT")
-	if port == "" {
-		port = defaultPort
+	errEnv := godotenv.Load()
+	if errEnv != nil {
+		log.Fatal("Ошибка при загрузке .env file")
 	}
+	port := os.Getenv("TODO_PORT")
+	DBFILE := os.Getenv("TODO_DBFILE")
 
-	// Настраиваем файловый сервер для обслуживания статических файлов из директории web
-	fs := http.FileServer(http.Dir(webDir))
-	http.Handle("/", fs)
+	db, err := sql.Open("sqlite", DBFILE)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer db.Close()
 
-	//Проверяю есть ли файл базы
-
-	appPath, err := os.Executable()
+	appPath, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
-	dbFile := filepath.Join(filepath.Dir(appPath), "scheduler.db")
+
+	dbFile := filepath.Join(appPath, DBFILE)
 	_, err = os.Stat(dbFile)
 
 	var install bool
+
 	if err != nil {
 		install = true
 	}
 
-	// Открываем базу данных
-	db, err := sql.Open("sqlite3", dbFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
 	if install {
-		// Создаем таблицу и индексы
 		database.CreateDB(db)
 	} else {
 		fmt.Println("База данных уже существует")
 	}
-	// если install равен true, после открытия БД требуется выполнить
-	// sql-запрос с CREATE TABLE и CREATE INDEX
+
+	router := chi.NewRouter()
+
+	router.Get("/*", handlers.GetStatic)
+	router.Get("/api/nextdate", handlers.GetNextDate)
+	router.Get("/api/tasks", func(w http.ResponseWriter, req *http.Request) { handlers.GetTasks(w, req, db) })
+	router.Get("/api/task", func(w http.ResponseWriter, req *http.Request) { handlers.GetTask(w, req, db) })
+	router.Put("/api/task", func(w http.ResponseWriter, req *http.Request) { handlers.UpdateTask(w, req, db) })
+	router.Post("/api/task", func(w http.ResponseWriter, req *http.Request) { handlers.AddTask(w, req, db) })
+	router.Post("/api/task/done", func(w http.ResponseWriter, req *http.Request) { handlers.DoneTask(w, req, db) })
+	router.Delete("/api/task", func(w http.ResponseWriter, req *http.Request) { handlers.DeleteTask(w, req, db) })
 
 	// Запускаем сервер
 	log.Printf("Сервер запущен на порту %s\n", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatalf("Ошибка при запуске сервера: %v", err)
 	}
 
