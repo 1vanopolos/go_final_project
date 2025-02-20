@@ -8,22 +8,20 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 	_ "modernc.org/sqlite"
 
 	"github.com/1vanopolos/go_final_project/database"
 	"github.com/1vanopolos/go_final_project/handlers"
-	"github.com/go-chi/chi/v5"
-	"github.com/joho/godotenv"
 )
 
-
 func main() {
-	// Определяем порт, который будет слушать сервер
 	errEnv := godotenv.Load()
 	if errEnv != nil {
 		log.Fatal("Ошибка при загрузке .env file")
 	}
-	port := os.Getenv("TODO_PORT")
+	PORT := os.Getenv("TODO_PORT")
 	DBFILE := os.Getenv("TODO_DBFILE")
 
 	db, err := sql.Open("sqlite", DBFILE)
@@ -64,10 +62,9 @@ func main() {
 	router.Post("/api/task/done", func(w http.ResponseWriter, req *http.Request) { handlers.DoneTask(w, req, db) })
 	router.Delete("/api/task", func(w http.ResponseWriter, req *http.Request) { handlers.DeleteTask(w, req, db) })
 
-	// Запускаем сервер
-	log.Printf("Сервер запущен на порту %s\n", port)
-	if err := http.ListenAndServe(port, nil); err != nil {
-		log.Fatalf("Ошибка при запуске сервера: %v", err)
+	fmt.Println("Сервер прослушивает порт", PORT)
+	if err := http.ListenAndServe(PORT, router); err != nil {
+		fmt.Printf("Ошибка при запуске сервера: %s", err.Error())
+		return
 	}
-
 }
