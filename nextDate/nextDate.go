@@ -1,4 +1,4 @@
-package nextdate
+package nextDate
 
 import (
 	"fmt"
