@@ -26,7 +26,7 @@ func main() {
 
 	db, err := sql.Open("sqlite", DBFILE)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	defer db.Close()

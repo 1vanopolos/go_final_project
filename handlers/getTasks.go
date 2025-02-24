@@ -39,12 +39,6 @@ func reqToDb(w http.ResponseWriter, rows *sql.Rows) []models.Task {
 		tasks = make([]models.Task, 0, 0)
 	}
 
-	limitTasks := 10
-
-	if len(tasks) > limitTasks {
-		tasks = tasks[:limitTasks]
-	}
-
 	return tasks
 }
 
