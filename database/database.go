@@ -25,4 +25,5 @@ func CreateDB(db *sql.DB) {
 		return
 	}
 	fmt.Println("Таблица и индекс успешно созданы")
+
 }
